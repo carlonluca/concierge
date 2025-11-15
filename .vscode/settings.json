@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "sstream": "cpp",
+        "cstdio": "cpp",
+        "ctime": "cpp",
+        "set": "cpp",
+        "mutex": "cpp"
+    }
+}
