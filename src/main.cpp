@@ -1,20 +1,21 @@
 #include <Adafruit_TinyUSB.h>
+#include <bluefruit.h>
 
 #define LC_LOGGING_DISABLE_THREADING
 #include "../deps/LightLogger/lc_logging.h"
 
+#include "ble/cowelcomebeacon.h"
+
 lightlogger::custom_log_func lightlogger::global_log_func = lightlogger::log_to_default;
+
+COWelcomeBeacon welcomeBeacon;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
+
+  Bluefruit.begin();
+  welcomeBeacon.startAdvertising();
 }
 
 void loop() {
-  digitalWrite(LED_RED, HIGH);
-  digitalWrite(LED_BLUE, HIGH);
-  delay(1000);
-  digitalWrite(LED_RED, LOW);
-  digitalWrite(LED_BLUE, LOW);
-  delay(1000);
-  lightlogger::log_debug("HELLO!");
 }
