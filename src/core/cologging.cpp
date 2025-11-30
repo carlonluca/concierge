@@ -1,6 +1,6 @@
 /*
  * Project: Concierge
- * Date:    2025.11.22
+ * Date:    2025.11.23
  *
  * Copyright (C) 2025 Luca Carlon
  *
@@ -18,21 +18,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Adafruit_TinyUSB.h>
-#include <bluefruit.h>
+#include "cologging.h"
 
-#include "core/cologging.h"
-#include "ble/cowelcomebeacon.h"
-
-COWelcomeBeacon* welcomeBeacon;
-
-void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  Bluefruit.begin();
-  welcomeBeacon = new COWelcomeBeacon;
-  welcomeBeacon->startAdvertising();
-}
-
-void loop() {
-}
+lightlogger::custom_log_func lightlogger::global_log_func = lightlogger::log_to_default;

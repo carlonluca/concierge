@@ -18,23 +18,103 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <core/cologging.h>
+
 #include "cowelcomebeacon.h"
+
+static COBeacon* g_beacon = nullptr;
+
+void connection_callback(uint16_t handle)
+{
+   if (!g_beacon) {
+      log_critical("Connection callback received without global instance");
+      return;
+   }
+
+   g_beacon->connectedCallback(handle);
+}
+
+void disconnection_callback(uint16_t handle, uint8_t reason)
+{
+   if (!g_beacon) {
+      log_critical("Disconnection callback received without global instance");
+      return;
+   }
+
+   g_beacon->disconnectedCallback(handle, reason);
+}
+
+COBeacon::COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower)
+{
+   m_periph.setConnectCallback(connection_callback);
+   m_periph.setDisconnectCallback(disconnection_callback);
+   if (g_beacon) {
+      log_critical("Only one beacon instance is allowed!");
+      return;
+   }
+
+   g_beacon = this;
+
+   Bluefruit.setTxPower(txPower);
+}
 
 void COBeacon::startAdvertising()
 {
-   BLEAdvertising& adv = Bluefruit.Advertising;
-
-   adv.setBeacon(m_beacon);
-   adv.setType(BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED);
-   adv.restartOnDisconnect(true);
-   adv.setInterval(160, 160);
-   adv.setFastTimeout(30);
-   adv.start();
+   m_adv.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
+   m_adv.addTxPower();
+   addServices();
+   m_adv.restartOnDisconnect(true);
+   m_adv.setInterval(160, 160);
+   m_adv.setFastTimeout(30);
+   m_adv.start(0);
 }
 
 void COBeacon::stopAdvertising()
 {
-   BLEAdvertising& adv = Bluefruit.Advertising;
+   m_adv.stop();
+}
 
-   adv.stop();
+void COBeacon::connectedCallback(uint16_t handle)
+{
+   auto* connection = Bluefruit.Connection(handle);
+   assert(connection);
+   if (!connection) {
+      log_warn("Could get handle to BLE connection");
+      return;
+   }
+
+   std::string centralName;
+   centralName.resize(32);
+   connection->getPeerName(&centralName[0], centralName.size());
+
+   log_info("BLE connection established to %s", centralName.c_str());
+}
+
+void COBeacon::disconnectedCallback(uint16_t handle, uint8_t reason)
+{
+   auto* connection = Bluefruit.Connection(handle);
+   assert(connection);
+   if (!connection) {
+      log_warn("Could get handle to BLE connection");
+      return;
+   }
+
+   std::string centralName;
+   centralName.resize(32);
+   connection->getPeerName(&centralName[0], centralName.size());
+
+   log_info("BLE disconnection: %s", centralName.c_str());
+}
+
+COWelcomeBeacon::COWelcomeBeacon() :
+   COBeacon(m_uuid, m_major, m_minor, m_txPower)
+{
+   m_dis.setManufacturer("Luke");
+   m_dis.setModel("Welcome beacon");
+   m_dis.begin();
+}
+
+void COWelcomeBeacon::addServices()
+{
+   m_adv.addService(m_dis);
 }

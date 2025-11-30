@@ -25,28 +25,40 @@
 
 #include <bluefruit.h>
 
+extern void connection_callback(uint16_t handle);
+extern void disconnection_callback(uint16_t handle);
+
 class COBeacon
 {
 public:
-   COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower) :
-      m_beacon(uuid, major, minor, -54) {
-         Bluefruit.setTxPower(txPower);
-         m_beacon.setManufacturer(MANUFACTURER_ID);
-      }
+   explicit COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower);
    virtual ~COBeacon() {}
 
    void startAdvertising();
    void stopAdvertising();
 
-private:
-   BLEBeacon m_beacon;
+protected:
+   virtual void addServices() {}
+   virtual void connectedCallback(uint16_t handle);
+   virtual void disconnectedCallback(uint16_t handle, uint8_t reason);
+
+protected:
+   BLEAdvertising& m_adv = Bluefruit.Advertising;
+   BLEPeriph& m_periph = Bluefruit.Periph;
    const uint16_t MANUFACTURER_ID = 0x0059;
+
+private:
+   friend void connection_callback(uint16_t handle);
+   friend void disconnection_callback(uint16_t handle, uint8_t reason);
 };
 
 class COWelcomeBeacon : public COBeacon
 {
 public:
-   COWelcomeBeacon() : COBeacon(m_uuid, m_major, m_minor, m_txPower) {}
+   COWelcomeBeacon();
+
+protected:
+   void addServices() override;
 
 private:
    const uint8_t m_txPower = 8;
@@ -59,6 +71,8 @@ private:
       0xB2, 0x19,
       0x7D, 0xC4, 0x5A, 0x8F, 0x33, 0xE1
    };
+
+   BLEDis m_dis;
 };
 
 #endif // COWELCOMEBEACON_H
