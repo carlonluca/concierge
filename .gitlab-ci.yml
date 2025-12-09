@@ -3,6 +3,7 @@ variables:
 
 stages:
   - build_welcomebeacon
+  - build_backend
 
 Build_welcomebeacon:
   stage: build_welcomebeacon
@@ -10,10 +11,20 @@ Build_welcomebeacon:
     - amd64
   image:
     name: "python:3.14-trixie"
-    entrypoint: [""]
   script:
     - export DEBIAN_FRONTEND=noninteractive
     - python3 -m pip install -U platformio --break-system-packages
-    - cd sensors
-    - cd welcomebeacon
+    - cd sensors/welcomebeacon
     - pio run
+
+Build_backend:
+  stage: build_backend
+  tags:
+    - amd64
+  image:
+    name: "rust:1.91-trixie"
+  script:
+    - apt-get update
+    - apt-get install -y libdbus-1-dev pkg-config
+    - cd backend/concierge-rs
+    - cargo build
