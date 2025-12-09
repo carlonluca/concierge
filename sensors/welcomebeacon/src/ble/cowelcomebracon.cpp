@@ -107,14 +107,30 @@ void COBeacon::disconnectedCallback(uint16_t handle, uint8_t reason)
 }
 
 COWelcomeBeacon::COWelcomeBeacon() :
-   COBeacon(m_uuid, m_major, m_minor, m_txPower)
+   COBeacon(m_uuid, m_major, m_minor, m_txPower),
+   m_tempService(m_uuidTempService),
+   m_measChar(m_uuidTempMeas)
 {
    m_dis.setManufacturer("Luke");
    m_dis.setModel("Welcome beacon");
    m_dis.begin();
+
+   m_tempService.begin();
+   m_measChar.setProperties(CHR_PROPS_READ);
+   m_measChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+   m_measChar.setFixedLen(4);
+   m_measChar.begin();
+   m_measChar.write32(0);
 }
 
 void COWelcomeBeacon::addServices()
 {
    m_adv.addService(m_dis);
+   m_adv.addService(m_tempService);
+}
+
+void COWelcomeBeacon::setCurrentMeas(uint32_t m)
+{
+   m_measurement = m;
+   m_measChar.write32(m);
 }

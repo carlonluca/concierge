@@ -57,10 +57,15 @@ class COWelcomeBeacon : public COBeacon
 public:
    COWelcomeBeacon();
 
+   uint32_t currentMeas() const { return m_measurement; }
+   void setCurrentMeas(uint32_t m);
+
 protected:
    void addServices() override;
 
 private:
+   uint32_t m_measurement = 0;
+
    const uint8_t m_txPower = 8;
    const uint8_t m_major = 1;
    const uint8_t m_minor = 1;
@@ -71,8 +76,24 @@ private:
       0xB2, 0x19,
       0x7D, 0xC4, 0x5A, 0x8F, 0x33, 0xE1
    };
+   const uint8_t m_uuidTempService[16] = {
+      0x3A, 0x91, 0xF4, 0x27,
+      0x8C, 0x56,
+      0x4E, 0xA3,
+      0xB2, 0x19,
+      0x7D, 0xC4, 0x5A, 0x8F, 0x00, 0x00
+   };
+   const uint8_t m_uuidTempMeas[16] = {
+      0x3A, 0x91, 0xF4, 0x27,
+      0x8C, 0x56,
+      0x4E, 0xA3,
+      0xB2, 0x19,
+      0x7D, 0xC4, 0x5A, 0x8F, 0x00, 0x01
+   };
 
    BLEDis m_dis;
+   BLEService m_tempService;
+   BLECharacteristic m_measChar;
 };
 
 #endif // COWELCOMEBEACON_H
