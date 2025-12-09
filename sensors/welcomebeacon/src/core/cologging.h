@@ -19,6 +19,6 @@
  */
 
 #define LC_LOGGING_DISABLE_THREADING
-#include "../deps/LightLogger/lc_logging.h"
+#include "../../../deps/LightLogger/lc_logging.h"
 
 using namespace lightlogger;
