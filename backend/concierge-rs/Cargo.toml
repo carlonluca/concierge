@@ -1,0 +1,14 @@
+[package]
+name = "concierge-rs"
+version = "0.1.0"
+edition = "2021"
+authors = [""]
+description = "Minimal Rust project scaffold for Concierge backend"
+license = "MIT"
+
+[dependencies]
+# Async runtime and BLE
+tokio = { version = "1", features = ["full"] }
+btleplug = "0.11"
+pretty_env_logger = "0.4"
+log = "0.4"
