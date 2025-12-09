@@ -1,0 +1,21 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build_welcomebeacon
+
+Build_welcomebeacon:
+  stage: build_welcomebeacon
+  tags:
+    - amd64
+  image:
+    name: "ubuntu:questing"
+    entrypoint: [""]
+  script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt update
+    - apt install -y python3 python3-pip
+    - python3 -m pip install -U platformio --break-system-packages
+    - cd sensors
+    - cd welcomebeacon
+    - pio run
