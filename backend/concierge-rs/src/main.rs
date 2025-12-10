@@ -1,6 +1,31 @@
-use std::time::Duration;
-use btleplug::api::{Central, Manager as _, Peripheral};
+/*
+ * Project: Concierge
+ * Date:    2025.12.10
+ *
+ * Copyright (C) 2025 Luca Carlon
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+use btleplug::api::{
+    Central,
+    Manager as _,
+    Peripheral,
+    CharPropFlags
+};
 use btleplug::platform::Manager;
+use std::time::Duration;
 use tokio::time::sleep;
 
 #[tokio::main]
@@ -52,6 +77,42 @@ async fn main() {
             let services = props.unwrap().unwrap().services;
             for service in services {
                 println!("Props: {}", service);
+            }
+
+            // Connect if not already connected
+            if peripheral.is_connected().await.is_ok() {
+                println!("Connecting to peripheral...");
+                peripheral.connect().await;
+                // Optional: discover characteristics/services after connect
+                peripheral.discover_services().await;
+            }
+
+            // Discover services & characteristics (populates characteristic list)
+            peripheral.discover_services().await;
+
+            // List all services and characteristics
+            println!("Discovered characteristics:");
+            for c in peripheral.characteristics() {
+                println!("- UUID: {}, props: {:?}", c.uuid, c.properties);
+            }
+
+            // Example 1: Read all readable characteristics
+            println!("\nReading all readable characteristics:");
+            for c in peripheral.characteristics() {
+                if c.properties.contains(CharPropFlags::READ) {
+                    match peripheral.read(&c).await {
+                        Ok(value) => {
+                            println!("Read {} bytes from {}: {:02x?}", value.len(), c.uuid, value);
+                            // If you expect UTF-8 text:
+                            if let Ok(text) = std::str::from_utf8(&value) {
+                                println!("  as UTF-8: {:?}", text);
+                            }
+                        }
+                        Err(e) => println!("Failed to read {}: {}", c.uuid, e),
+                    }
+                } else {
+                    println!("Skipping {} (not readable)", c.uuid);
+                }
             }
         }
 
