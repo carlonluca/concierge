@@ -18,21 +18,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use btleplug::api::{
-    Central,
-    Manager as _,
-    Peripheral,
-    CharPropFlags
-};
-use btleplug::platform::Manager;
-use std::time::Duration;
-use tokio::time::sleep;
+mod coquery;
+mod coenv;
+
+use crate::{coenv::COEnv, coquery::COQuery};
+use uuid::Uuid;
+
+extern crate pretty_env_logger;
+#[macro_use] extern crate log;
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
 
-    println!("Scanning for BLE adapters (using btleplug)...");
+    let welcome_beacon_uuid = Uuid::parse_str(&COEnv::welcome_beacon_uuid())
+        .expect("Welcome beacon UUID missing");
+    let query = COQuery { uuid: welcome_beacon_uuid };
+    let _ = query.read_temp().await;
+}
+
+/*
+
+println!("Scanning for BLE adapters (using btleplug)...");
 
     let manager = match Manager::new().await {
         Ok(m) => m,
@@ -119,5 +126,7 @@ async fn main() {
         if let Err(e) = adapter.stop_scan().await {
             eprintln!("Failed to stop scan: {}", e);
         }
-    }
-}
+    }   
+
+
+*/
