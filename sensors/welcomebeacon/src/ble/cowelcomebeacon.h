@@ -43,6 +43,7 @@ protected:
    virtual void disconnectedCallback(uint16_t handle, uint8_t reason);
 
 protected:
+   BLEBeacon m_beacon;
    BLEAdvertising& m_adv = Bluefruit.Advertising;
    BLEPeriph& m_periph = Bluefruit.Periph;
    const uint16_t MANUFACTURER_ID = 0x0059;

@@ -44,7 +44,8 @@ void disconnection_callback(uint16_t handle, uint8_t reason)
    g_beacon->disconnectedCallback(handle, reason);
 }
 
-COBeacon::COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower)
+COBeacon::COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower) :
+   m_beacon(uuid)
 {
    m_periph.setConnectCallback(connection_callback);
    m_periph.setDisconnectCallback(disconnection_callback);
@@ -62,6 +63,7 @@ void COBeacon::startAdvertising()
 {
    m_adv.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
    m_adv.addTxPower();
+   m_adv.setBeacon(m_beacon);
    addServices();
    m_adv.restartOnDisconnect(true);
    m_adv.setInterval(160, 160);
