@@ -22,7 +22,6 @@ mod coquery;
 mod coenv;
 
 use crate::{coenv::COEnv, coquery::COQuery};
-use uuid::Uuid;
 
 extern crate pretty_env_logger;
 #[macro_use] extern crate log;
@@ -31,102 +30,7 @@ extern crate pretty_env_logger;
 async fn main() {
     pretty_env_logger::init();
 
-    let welcome_beacon_uuid = Uuid::parse_str(&COEnv::welcome_beacon_uuid())
-        .expect("Welcome beacon UUID missing");
+    let welcome_beacon_uuid = COEnv::welcome_beacon_uuid();
     let query = COQuery { uuid: welcome_beacon_uuid };
     let _ = query.read_temp().await;
 }
-
-/*
-
-println!("Scanning for BLE adapters (using btleplug)...");
-
-    let manager = match Manager::new().await {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("Failed to create Manager: {}", e);
-            return;
-        }
-    };
-
-    let adapters = match manager.adapters().await {
-        Ok(a) => a,
-        Err(e) => {
-            eprintln!("Failed to get adapters: {}", e);
-            return;
-        }
-    };
-
-    if adapters.is_empty() {
-        println!("No BLE adapters found on this system.");
-        return;
-    }
-
-    for adapter in adapters {
-        println!("Found adapter: {:?}", adapter.adapter_info().await);
-
-        println!("Starting scan on adapter...");
-        if let Err(e) = adapter.start_scan(Default::default()).await {
-            eprintln!("Failed to start scan: {}", e);
-            continue;
-        }
-
-        // Wait a little for devices to be discovered
-        sleep(Duration::from_secs(4)).await;
-
-        let peripherals = adapter.peripherals().await;
-        let peripherals = peripherals.unwrap();
-        println!("Peripherals found: {}", peripherals.len());
-
-        for peripheral in peripherals {
-            println!("Peripheral: {}", peripheral.id());
-            let props = peripheral.properties().await;
-            let services = props.unwrap().unwrap().services;
-            for service in services {
-                println!("Props: {}", service);
-            }
-
-            // Connect if not already connected
-            if peripheral.is_connected().await.is_ok() {
-                println!("Connecting to peripheral...");
-                peripheral.connect().await;
-                // Optional: discover characteristics/services after connect
-                peripheral.discover_services().await;
-            }
-
-            // Discover services & characteristics (populates characteristic list)
-            peripheral.discover_services().await;
-
-            // List all services and characteristics
-            println!("Discovered characteristics:");
-            for c in peripheral.characteristics() {
-                println!("- UUID: {}, props: {:?}", c.uuid, c.properties);
-            }
-
-            // Example 1: Read all readable characteristics
-            println!("\nReading all readable characteristics:");
-            for c in peripheral.characteristics() {
-                if c.properties.contains(CharPropFlags::READ) {
-                    match peripheral.read(&c).await {
-                        Ok(value) => {
-                            println!("Read {} bytes from {}: {:02x?}", value.len(), c.uuid, value);
-                            // If you expect UTF-8 text:
-                            if let Ok(text) = std::str::from_utf8(&value) {
-                                println!("  as UTF-8: {:?}", text);
-                            }
-                        }
-                        Err(e) => println!("Failed to read {}: {}", c.uuid, e),
-                    }
-                } else {
-                    println!("Skipping {} (not readable)", c.uuid);
-                }
-            }
-        }
-
-        if let Err(e) = adapter.stop_scan().await {
-            eprintln!("Failed to stop scan: {}", e);
-        }
-    }   
-
-
-*/

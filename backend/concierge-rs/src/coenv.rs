@@ -19,6 +19,7 @@
  */
 
 use std::env;
+use uuid::Uuid;
 
 pub struct COEnv {}
 
@@ -35,12 +36,31 @@ impl COEnv {
       }
    }
 
+   pub fn read_env_uuid(key: &str, def: Uuid, err: &str) -> Uuid {
+      let uuid = COEnv::read_env_string(key, def.to_string());
+      Uuid::parse_str(&uuid)
+         .expect(err)
+   }
+
    pub fn scan_interval() -> u64 {
       COEnv::read_env_u64("CONCIERGE_SCAN_INTERVAL", 4000)
    }
 
-   pub fn welcome_beacon_uuid() -> String {
-      COEnv::read_env_string("CONCIERGE_WELCOME_BEACON_UUID",
-         "3a91f427-8c56-4ea3-b219-7dc45a8f33e1".to_string())
+   pub fn welcome_beacon_uuid() -> Uuid {
+      COEnv::read_env_uuid("CONCIERGE_WELCOME_BEACON_UUID",
+         Uuid::parse_str(&"3a91f427-8c56-4ea3-b219-7dc45a8f33e1").unwrap(),
+         "Invalid welcome beacon uuid")
+   }
+
+   pub fn temp_service_uuid() -> Uuid {
+      COEnv::read_env_uuid("CONCIERGE_TEMP_SERVICE_UUID",
+            Uuid::parse_str("3a91f427-8c56-4ea3-b219-7dc45a8f0000").unwrap(),
+            "Invalid temp service")
+   }
+
+   pub fn temp_read_char_uuid() -> Uuid {
+      COEnv::read_env_uuid("CONCIERGE_TEMP_READ_CHAR_UUID",
+            Uuid::parse_str("3a91f427-8c56-4ea3-b219-7dc45a8f0001").unwrap(),
+            "Invalid read temp characteristic")
    }
 }

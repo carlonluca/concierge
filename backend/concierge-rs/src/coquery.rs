@@ -129,21 +129,15 @@ impl COQuery {
                   trace!("Empty manufacturer data");
                }
                for (_, data) in props.manufacturer_data {
-                  if data.iter().count() < 23 {
+                  info!("Beacon found       : {:?}", peripheral.address());
+                  info!("  Manufacturer data: {:?}", data);
+
+                  if data.iter().count() < 17 {
                      continue
                   }
 
-                  let uuid = Uuid::from_slice(&data[2..18]);
-                  let major = u16::from_be_bytes([data[18], data[19]]);
-                  let minor = u16::from_be_bytes([data[20], data[21]]);
-                  let tx_power = data[22] as i8;
-
-                  trace!("iBeacon found:");
-                  trace!("  UUID : {:?}", uuid);
-                  trace!("  Major: {}", major);
-                  trace!("  Minor: {}", minor);
-                  trace!("  Tx   : {}", tx_power);
-                  trace!("  RSSI : {:?}", props.rssi);
+                  let uuid = Uuid::from_slice(&data[1..17]);
+                  info!("  UUID             : {:?}", uuid);
 
                   if let Ok(uuid) = uuid {
                      return uuid == self.uuid;
@@ -190,6 +184,40 @@ impl COQuery {
       if let Err(e) = peripheral.discover_services().await {
          warn!("Failed to query for services: {:?}", e);
          return Err(ErrorType::CommunicationFailure);
+      }
+
+      let services = peripheral.services();
+      for service in &services {
+         trace!("Service found: {:?}", service.uuid);
+      }
+
+      let temp_service_uuid = COEnv::temp_service_uuid();
+      let tmp_service = services
+            .iter()
+            .find(|s| s.uuid == temp_service_uuid);
+      if tmp_service == None {
+         warn!("Could not find temp service in welcome beacon");
+         return Err(ErrorType::CommunicationFailure);
+      }
+
+      let chars = &tmp_service.unwrap().characteristics;
+      for char in chars {
+         trace!("Characteristic found: {:?}", char.uuid);
+      }
+
+      let read_temp_char_uuid = COEnv::temp_read_char_uuid();
+      let read_temp_char = chars
+            .iter()
+            .find(|c| c.uuid == read_temp_char_uuid);
+      if read_temp_char == None {
+         warn!("Could not find read temp characteristic");
+         return Err(ErrorType::CommunicationFailure);
+      }
+
+      info!("Reading temp...");
+      match peripheral.read(&read_temp_char.unwrap()).await {
+         Ok(value) => { info!("Temp successfully read: {:?}", value); }
+         Err(e) => { warn!("Failed to read temp: {:?}", e); }
       }
       
       match peripheral.disconnect().await {
