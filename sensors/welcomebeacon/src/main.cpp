@@ -37,5 +37,6 @@ void setup() {
 void loop() {
   delay(5000);
 
+  log_info("Setting new value: %u", welcomeBeacon->currentMeas());
   welcomeBeacon->setCurrentMeas(welcomeBeacon->currentMeas() + 1);
 }

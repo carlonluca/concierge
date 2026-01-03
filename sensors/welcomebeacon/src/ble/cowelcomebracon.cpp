@@ -44,8 +44,7 @@ void disconnection_callback(uint16_t handle, uint8_t reason)
    g_beacon->disconnectedCallback(handle, reason);
 }
 
-COBeacon::COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower) :
-   m_beacon(uuid)
+COBeacon::COBeacon(const UuidData uuid) : m_uuid(uuid)
 {
    m_periph.setConnectCallback(connection_callback);
    m_periph.setDisconnectCallback(disconnection_callback);
@@ -56,14 +55,16 @@ COBeacon::COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t
 
    g_beacon = this;
 
-   Bluefruit.setTxPower(txPower);
+   Bluefruit.setTxPower(8);
 }
 
 void COBeacon::startAdvertising()
 {
+   stopAdvertising();
+   m_adv.clearData();
    m_adv.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
    m_adv.addTxPower();
-   m_adv.setBeacon(m_beacon);
+   setupBeaconAdvData();
    addServices();
    m_adv.restartOnDisconnect(true);
    m_adv.setInterval(160, 160);
@@ -94,30 +95,40 @@ void COBeacon::connectedCallback(uint16_t handle)
 
 void COBeacon::disconnectedCallback(uint16_t handle, uint8_t reason)
 {
-   auto* connection = Bluefruit.Connection(handle);
-   assert(connection);
-   if (!connection) {
-      log_warn("Could get handle to BLE connection");
-      return;
-   }
+   log_info("BLE disconnection, reason: %u", reason);
+}
 
-   std::string centralName;
-   centralName.resize(32);
-   connection->getPeerName(&centralName[0], centralName.size());
+void COBeacon::setupBeaconAdvData()
+{
+   uint8_t mfg_data[2 + 1 + 16];
 
-   log_info("BLE disconnection: %s", centralName.c_str());
+   mfg_data[0] = 0xAA;   // Company ID LSB
+   mfg_data[1] = 0xAA;   // Company ID MSB
+   mfg_data[2] = 0x01;   // Custom type/version
+
+   memcpy(&mfg_data[3], m_uuid.data(), 16);
+
+   m_adv.addManufacturerData(mfg_data, sizeof(mfg_data));
+}
+
+template <typename V>
+V reversed(const V& in)
+{
+    V out = in;
+    std::reverse(out.begin(), out.end());
+    return out;
 }
 
 COWelcomeBeacon::COWelcomeBeacon() :
-   COBeacon(m_uuid, m_major, m_minor, m_txPower),
-   m_tempService(m_uuidTempService),
-   m_measChar(m_uuidTempMeas)
+   COBeacon(m_uuid)
 {
    m_dis.setManufacturer("Luke");
    m_dis.setModel("Welcome beacon");
    m_dis.begin();
 
+   m_tempService.setUuid(reversed(m_uuidTempService).data());
    m_tempService.begin();
+   m_measChar.setUuid(reversed(m_uuidTempMeas).data());
    m_measChar.setProperties(CHR_PROPS_READ);
    m_measChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
    m_measChar.setFixedLen(4);

@@ -22,8 +22,12 @@
 #define COWELCOMEBEACON_H
 
 #include <cstdint>
+#include <algorithm>
+#include <array>
 
 #include <bluefruit.h>
+
+using UuidData = std::array<uint8_t, 16>;
 
 extern void connection_callback(uint16_t handle);
 extern void disconnection_callback(uint16_t handle);
@@ -31,7 +35,7 @@ extern void disconnection_callback(uint16_t handle);
 class COBeacon
 {
 public:
-   explicit COBeacon(const uint8_t uuid[16], uint8_t major, uint8_t minor, uint8_t txPower);
+   explicit COBeacon(const UuidData uuid);
    virtual ~COBeacon() {}
 
    void startAdvertising();
@@ -39,11 +43,11 @@ public:
 
 protected:
    virtual void addServices() {}
+   virtual void setupBeaconAdvData();
    virtual void connectedCallback(uint16_t handle);
    virtual void disconnectedCallback(uint16_t handle, uint8_t reason);
 
 protected:
-   BLEBeacon m_beacon;
    BLEAdvertising& m_adv = Bluefruit.Advertising;
    BLEPeriph& m_periph = Bluefruit.Periph;
    const uint16_t MANUFACTURER_ID = 0x0059;
@@ -51,6 +55,9 @@ protected:
 private:
    friend void connection_callback(uint16_t handle);
    friend void disconnection_callback(uint16_t handle, uint8_t reason);
+
+private:
+   const UuidData m_uuid;
 };
 
 class COWelcomeBeacon : public COBeacon
@@ -67,30 +74,29 @@ protected:
 private:
    uint32_t m_measurement = 0;
 
-   const uint8_t m_txPower = 8;
-   const uint8_t m_major = 1;
-   const uint8_t m_minor = 1;
-   const uint8_t m_uuid[16] = {
+   static constexpr UuidData m_uuid = {{
       0x3A, 0x91, 0xF4, 0x27,
       0x8C, 0x56,
       0x4E, 0xA3,
       0xB2, 0x19,
       0x7D, 0xC4, 0x5A, 0x8F, 0x33, 0xE1
-   };
-   const uint8_t m_uuidTempService[16] = {
+   }};
+
+   static constexpr UuidData m_uuidTempService = {{
       0x3A, 0x91, 0xF4, 0x27,
       0x8C, 0x56,
       0x4E, 0xA3,
       0xB2, 0x19,
       0x7D, 0xC4, 0x5A, 0x8F, 0x00, 0x00
-   };
-   const uint8_t m_uuidTempMeas[16] = {
+   }};
+
+   static constexpr UuidData m_uuidTempMeas = {{
       0x3A, 0x91, 0xF4, 0x27,
       0x8C, 0x56,
       0x4E, 0xA3,
       0xB2, 0x19,
       0x7D, 0xC4, 0x5A, 0x8F, 0x00, 0x01
-   };
+   }};
 
    BLEDis m_dis;
    BLEService m_tempService;
